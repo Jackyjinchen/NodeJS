@@ -438,3 +438,177 @@ console.log("文件解压完成。");
 ```
 
 ## Events 事件
+
+Node.js几乎每一个API都支持回调函数，基本上都是用观察者模式实现的。
+
+<img src="README.assets/event_loop-20210615085321996.jpg" alt="img" style="zoom: 67%;" />
+
+### EventEmitters
+
+通过引入events模块，并实例化EventEmitter类来绑定和监听事件。
+
+```js
+var events = require('events');
+var eventEmitter = new events.EventEmitter();
+// 绑定事件及处理程序
+eventEmitter.on('eventName',eventHandler);
+// 触发事件
+eventEmitter.emit('eventName')
+```
+
+#### EventEmitter的属性
+
+##### 方法
+
+| 序号 | 方法 & 描述                                                  |
+| ---- | ------------------------------------------------------------ |
+| 1    | **addListener(event, listener)** 为指定事件添加一个监听器到监听器数组的尾部。 |
+| 2    | **on(event, listener)** 为指定事件注册一个监听器，接受一个字符串 event 和一个回调函数。 |
+| 3    | **once(event, listener)** 为指定事件注册一个单次监听器，即 监听器最多只会触发一次，触发后立刻解除该监听器。 |
+| 4    | **removeListener(event, listener)** 移除指定事件的某个监听器，监听器必须是该事件已经注册过的监听器。它接受两个参数，第一个是事件名称，第二个是回调函数名称。 |
+| 5    | **removeAllListeners([event])** 移除所有事件的所有监听器， 如果指定事件，则移除指定事件的所有监听器。 |
+| 6    | **setMaxListeners(n)** 默认情况下， EventEmitters 如果你添加的监听器超过 10 个就会输出警告信息。 setMaxListeners 函数用于改变监听器的默认限制的数量。 |
+| 7    | **listeners(event)** 返回指定事件的监听器数组。              |
+| 8    | **emit(event, [arg1], [arg2], [...])** 按监听器的顺序执行执行每个监听器，如果事件有注册监听返回 true，否则返回 false。 |
+
+##### 类方法
+
+| 序号 | 方法 & 描述                                                  |
+| ---- | ------------------------------------------------------------ |
+| 1    | **listenerCount(emitter, event)** 返回指定事件的监听器数量。 |
+
+##### 事件
+
+| 序号 | 事件 & 描述                                                  |
+| ---- | ------------------------------------------------------------ |
+| 1    | **newListener**<br />**event** - 字符串，事件名称<br />**listener** - 处理事件函数该事件在添加新监听器时被触发。 |
+| 2    | **removeListener** <br />**event** - 字符串，事件名称<br />**listener** - 处理事件函数从指定监听器数组中删除一个监听器。需要注意的是，此操作将会改变处于被删监听器之后的那些监听器的索引。 |
+
+#### 继承 EventEmitter
+
+大多数时候我们不会直接使用 EventEmitter，而是在对象中继承它。包括 fs、net、 http 在内的，只要是支持事件响应的核心模块都是 EventEmitter 的子类。
+原因有两点：
+首先，具有某个实体功能的对象实现事件符合语义， 事件的监听和发生应该是一个对象的方法。
+其次 JavaScript 的对象机制是基于原型的，支持 部分多重继承，继承 EventEmitter 不会打乱对象原有的继承关系。
+
+## 工具模块
+
+### Path模块
+
+```js
+let path = require('path');
+
+// 获取后缀名，即最后一个'.'之后的部分
+let strPath = "http://www.test.com/a.jpg";
+let info = path.extname( strPath ); //.jpg
+
+//解析为绝对路径
+path.resolve('/nodejs','study','modules'); // C:\nodejs\study\modules
+
+//规范化路径
+path.normalize(p)
+
+//判断是否是绝对路径
+path.isAbsolute(p)
+
+//绝对路径转化为相对路径，从from到to path.relative(from,to)
+path.relative('data/test/aaa','data/impl/bbb') // 返回 '../../impl/bbb'
+
+//返回路径中代表文件夹的部分
+path.dirname(p)
+
+//返回路径中的最后一部分
+path.basename(p[,ext])
+
+//返回路径字符串对象
+path.parse(pathString)
+
+//从对象中返回路径字符串，和path.parse相反
+path.format(pathObject)
+
+//获取路径和脚本名
+console.log(__filename) //执行文件的文件路径，为绝对路径
+console.log(__dirname) //当前执行脚本所在的目录
+process.cwd() //当前执行node命令时候的文件夹目录名
+```
+
+### OS模块
+
+| 序号 | 方法 & 描述                                                  |
+| ---- | ------------------------------------------------------------ |
+| 1    | **os.tmpdir()** 返回操作系统的默认临时文件夹。               |
+| 2    | **os.endianness()** 返回 CPU 的字节序，可能的是 "BE" 或 "LE"。 |
+| 3    | **os.hostname()** 返回操作系统的主机名。                     |
+| 4    | **os.type()** 返回操作系统名                                 |
+| 5    | **os.platform()** 返回编译时的操作系统名                     |
+| 6    | **os.arch()** 返回操作系统 CPU 架构，可能的值有 "x64"、"arm" 和 "ia32"。 |
+| 7    | **os.release()** 返回操作系统的发行版本。                    |
+| 8    | **os.uptime()** 返回操作系统运行的时间，以秒为单位。         |
+| 9    | **os.loadavg()** 返回一个包含 1、5、15 分钟平均负载的数组。  |
+| 10   | **os.totalmem()** 返回系统内存总量，单位为字节。             |
+| 11   | **os.freemem()** 返回操作系统空闲内存量，单位是字节。        |
+| 12   | **os.cpus()** 返回一个对象数组，包含所安装的每个 CPU/内核的信息：型号、速度（单位 MHz）、时间（一个包含 user、nice、sys、idle 和 irq 所使用 CPU/内核毫秒数的对象）。 |
+| 13   | **os.networkInterfaces()** 获得网络接口列表。                |
+
+## 爬虫 cheerio
+
+```js
+const cheerio = require('cheerio');
+const axios = require('axios');
+const fs = require('fs');
+const path = require('path');
+
+let httpUrls = "https://www.doutula.com/article/list/?page="
+
+async function getNum(){
+  res = await axios.get(httpUrls);
+  let $ = cheerio.load(res.data);
+  let btnLength = $('.pagination li').length;
+  let allNum = $('.pagination li').eq(btnLength-2).find('a').text()
+  return allNum
+}
+
+async function spider(){
+  let allPageNum = await getNum();
+  for(let i=1;i<=allPageNum;i++){
+    getListPage(i);
+  }
+}
+
+async function getListPage(pageNum){
+  let httpUrl = httpUrls + pageNum;
+  let res = await axios.get(httpUrl);
+  let $ = cheerio.load(res.data)
+  $('#home .col-sm-9 a').each((i,element)=>{
+    let pageUrl = $(element).attr('href');
+    let title = $(element).find('.random_title').text()
+    let reg = /(.*?)\d/igs;
+    title = reg.exec(title)[1];
+    fs.mkdir('./img/'+title,function(err){
+      if(err) console.log(err);
+    });
+    parsePage(pageUrl);
+  })
+}
+
+async function parsePage(url,title){
+  let res = await axios.get(url);
+  let $ = cheerio.load(res.data)
+  $('.pic-content img').each((i,element)=>{
+    let imgUrl = $(element.attr('src'))
+    let extName = path.extname(imgUrl);
+    let ws = fs.createWriteStream(`./img/${title}/${title}-${i}${extName}`)
+    axios.get(imgUrl,{responseType:'stream'}).then(function(){
+      res.data.pipe(ws);
+      res.data.on('close',function(){
+        ws.close();
+      })
+    })
+  })
+}
+
+spider();
+```
+
+
+
