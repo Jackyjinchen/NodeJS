@@ -1,4 +1,4 @@
-# Node.js
+#  Node.js
 
 ## 介绍
 
@@ -553,6 +553,7 @@ process.cwd() //当前执行node命令时候的文件夹目录名
 ## 爬虫 cheerio
 
 ```js
+//爬取图片
 const cheerio = require('cheerio');
 const axios = require('axios');
 const fs = require('fs');
@@ -561,7 +562,7 @@ const path = require('path');
 let httpUrls = "https://www.doutula.com/article/list/?page="
 
 async function getNum(){
-  res = await axios.get(httpUrls);
+  res = await axios.get(httpUrls+'1');
   let $ = cheerio.load(res.data);
   let btnLength = $('.pagination li').length;
   let allNum = $('.pagination li').eq(btnLength-2).find('a').text()
@@ -608,6 +609,41 @@ async function parsePage(url,title){
 }
 
 spider();
+```
+
+```js
+//爬取音乐
+const axios = require('axios');
+const fs = require('fs');
+const path = require('path');
+
+async function getPage(num){
+  let httpUrl = "http://www.app-echo.com/api/recommend/sound-day?page="+num;
+  let res = await axios.get(httpUrl);
+  console.log(res.data.list);
+  res.data.list.forEach(function(item,i){
+    let title = item.sound.name;
+    let mp3Url = item.sound.source;
+    let filename = path.parse(mp3Url).name;
+    
+    let content = `${title},${mp3Url},${filename}\n`;
+    fs.writeFile('music.txt',content,{flag:'a'},function(){
+      console.log('写入完成'+title)
+    })
+    download(mp3Url,title)
+  })
+}
+
+async function download(mp3Url,title){
+  let res = await axios.get(mp3Url,{responseType:"stream"});
+  let ws = fs.createWriteStream('./mp3/'+title+'.mp3')
+  res.data.pipe(ws)
+  res.data.on('close',function(){
+    ws.close()
+  })
+}
+
+getPage(1);
 ```
 
 
