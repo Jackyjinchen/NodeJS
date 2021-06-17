@@ -967,3 +967,28 @@ fs.createReadStream('input.txt.gz')
 console.log("文件解压完成。");
 ```
 
+### Readline 写入
+
+```js
+const readline = require('readline')
+cosnt rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout
+});
+rl.question('question?', (answer) => {
+  console.log('thanks',answer);
+  rl.close();
+})
+```
+
+#### Crypto 加密
+
+```js
+const crypto = require('crypto')
+const secret = 'abcdefg'
+const hash = crypto.createHmac('sha256', secret)
+                   .update('I love you')
+                   .digest('hex')
+console.log(hash)
+```
+
