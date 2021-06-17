@@ -124,376 +124,48 @@ npm ls xx //查看本地包及版本信息
 npm ls xx -g
 ```
 
-## FS 文件系统
+#### npm版本符号
 
-### 读取文件
+^：锁定major
+~：锁定minor
+空：锁定patch
+*：最新版本
 
-```js
-const fs= require('fs')
+## 内置工具模块
 
-//同步读取
-var data = fs.readFileSync('hello.txt');
-//异步读取
-fs.readFile('hello.txt',function(err, data){
-  if(err) throw err;
-  console.log(data);
-})
-fs.writeFile('test.txt','helloworld',{flag:'a', encoding:'utf-8'}, function(err){
-  if(err) console.log("error",err)
-})
-```
-
-### 打开文件
+### Querystring 字符串转换
 
 ```js
-// fs.open(path, flags[, mode], callback)
-fs.open('input.txt', 'r+', function(err, fd) {
-  if(err) {
-    return console.error(err);
-  }
-  console.log("打开成功！")
-});
+const querystring = require('querystring')
+// parse
+var qs = 'x=3&y=4'
+var parsed = querystring.parse(qs)
+console.log(parsed)
+
+// stringfy 和parse相反
+const querystring = require('querystring')
+var qo = {
+  x: 3,
+  y: 4
+}
+var parsed = querystring.stringify(qo)
+console.log(parsed)
+
+//escape/unescape
+const querystring = require('querystring')
+var str = 'id=3&city=北京&url=https://www.baidu.com'
+var escaped = querystring.escape(str)
+console.log(escaped)
+
+const querystring = require('querystring')
+var str = 'id%3D3%26city%3D%E5%8C%97%E4%BA%AC%26url%3Dhttps%3A%2F%2Fwww.baidu.com'
+var unescaped = querystring.unescape(str)
+console.log(unescaped)
 ```
 
-- **path** - 文件的路径。
-- **flags** - 文件打开的行为。具体值详见下文。
-- **mode** - 设置文件模式(权限)，文件创建默认权限为 0666(可读，可写)。
-- **callback** - 回调函数，带有两个参数如：callback(err, fd)。
-
-| Flag | 描述                                                   |
-| ---- | ------------------------------------------------------ |
-| r    | 以读取模式打开文件。如果文件不存在抛出异常。           |
-| r+   | 以读写模式打开文件。如果文件不存在抛出异常。           |
-| rs   | 以同步的方式读取文件。                                 |
-| rs+  | 以同步的方式读取和写入文件。                           |
-| w    | 以写入模式打开文件，如果文件不存在则创建。             |
-| wx   | 类似 'w'，但是如果文件路径存在，则文件写入失败。       |
-| w+   | 以读写模式打开文件，如果文件不存在则创建。             |
-| wx+  | 类似 'w+'， 但是如果文件路径存在，则文件读写失败。     |
-| a    | 以追加模式打开文件，如果文件不存在则创建。             |
-| ax   | 类似 'a'， 但是如果文件路径存在，则文件追加失败。      |
-| a+   | 以读取追加模式打开文件，如果文件不存在则创建。         |
-| ax+  | 类似 'a+'， 但是如果文件路径存在，则文件读取追加失败。 |
 
 
-
-### 获取文件信息
-
-```js
-// fs.stat(path, callback)
-fs.stat('test.js', function(err, stats) {
-  console.log(stats.isFile());
-})
-```
-
-states类中方法有：
-
-| 方法                      | 描述                                                         |
-| ------------------------- | ------------------------------------------------------------ |
-| stats.isFile()            | 如果是文件返回 true，否则返回 false。                        |
-| stats.isDirectory()       | 如果是目录返回 true，否则返回 false。                        |
-| stats.isBlockDevice()     | 如果是块设备返回 true，否则返回 false。                      |
-| stats.isCharacterDevice() | 如果是字符设备返回 true，否则返回 false。                    |
-| stats.isSymbolicLink()    | 如果是软链接返回 true，否则返回 false。                      |
-| stats.isFIFO()            | 如果是FIFO，返回true，否则返回 false。FIFO是UNIX中的一种特殊类型的命令管道。 |
-| stats.isSocket()          | 如果是 Socket 返回 true，否则返回 false。                    |
-
-### 写入文件
-
-```js
-// fs.writeFile(file, data[, options], callback)
-fs.writeFile('input.txt', '我是通过fs.writeFile 写入文件的内容',  function(err) {
-   if (err) {
-       return console.error(err);
-   }
-   fs.readFile('input.txt', function (err, data) {
-      if (err) {
-         return console.error(err);
-      }
-      console.log("异步读取文件数据: " + data.toString());
-   });
-});
-```
-
-- **file** - 文件名或文件描述符。
-- **data** - 要写入文件的数据，可以是 String(字符串) 或 Buffer(缓冲) 对象。
-- **options** - 该参数是一个对象，包含 {encoding, mode, flag}。默认编码为 utf8, 模式为 0666 ， flag 为 'w'
-- **callback** - 回调函数，回调函数只包含错误信息参数(err)，在写入失败时返回。
-
-### 读取文件
-
-```js
-// fs.read(fd, buffer, offset, length, position, callback)
-```
-
-- **fd** - 通过 fs.open() 方法返回的文件描述符。
-- **buffer** - 数据写入的缓冲区。
-- **offset** - 缓冲区写入的写入偏移量。
-- **length** - 要从文件中读取的字节数。
-- **position** - 文件读取的起始位置，如果 position 的值为 null，则会从当前文件指针的位置读取。
-- **callback** - 回调函数，有三个参数err, bytesRead, buffer，err 为错误信息， bytesRead 表示读取的字节数，buffer 为缓冲区对象。
-
-### 关闭文件
-
-```js
-// fs.close(fd, callback)
-var fs = require("fs");
-var buf = new Buffer.alloc(1024);
-fs.open('input.txt', 'r+', function(err, fd) {
-   if (err) {
-       return console.error(err);
-   }
-   fs.read(fd, buf, 0, buf.length, 0, function(err, bytes){
-      if (err){
-         console.log(err);
-      }
-      // 仅输出读取的字节
-      if(bytes > 0){
-         console.log(buf.slice(0, bytes).toString());
-      }
-      // 关闭文件
-      fs.close(fd, function(err){
-         if (err){
-            console.log(err);
-         } 
-         console.log("文件关闭成功");
-      });
-   });
-});
-```
-
-- **fd** - 通过 fs.open() 方法返回的文件描述符。
-- **callback** - 回调函数，没有参数。
-
-### 截取文件
-
-```js
-// fs.ftruncate(fd, len, callback)
-fs.ftruncate(fd, 10, function(err){
-  if (err){
-    console.log(err);
-  } 
-});
-```
-
-- **fd** - 通过 fs.open() 方法返回的文件描述符。
-- **len** - 文件内容截取的长度。
-- **callback** - 回调函数，没有参数。
-
-### 删除文件
-
-```js
-// fs.unlink(path, callback)
-fs.unlink('input.txt', function(err) {
-   if (err) {
-       return console.error(err);
-   }
-   console.log("文件删除成功！");
-});
-```
-
-### 创建目录
-
-```js
-// fs.mkdir(path[, options], callback)
-fs.mkdir("/tmp/test/",function(err){
-   if (err) {
-       return console.error(err);
-   }
-   console.log("目录创建成功。");
-});
-```
-
-- **path** - 文件路径。
-- options 参数可以是：
-  - **recursive** - 是否以递归的方式创建目录，默认为 false。
-  - **mode** - 设置目录权限，默认为 0777。
-- **callback** - 回调函数，没有参数。
-
-### 读取目录
-
-```js
-// fs.readdir(path, callback)
-fs.readdir("/tmp/",function(err, files){
-   if (err) {
-       return console.error(err);
-   }
-   files.forEach( function (file){
-       console.log( file );
-   });
-});
-```
-
-- **path** - 文件路径。
-- **callback** - 回调函数，回调函数带有两个参数err, files，err 为错误信息，files 为 目录下的文件数组列表。
-
-### 删除目录
-
-```js
-// fs.rmdir(path, callback)
-fs.rmdir("/tmp/test",function(err){
-   if (err) {
-       return console.error(err);
-   }
-});
-```
-
-## Stream 流
-
-Node.js有四种流类型：
-
-- Readable - 可读操作
-- Writeable - 可写操作
-- Duplex - 可读可写操作
-- Transform - 操作被写入数据，然后读出结果。
-
-所有的Stream对象都是EventEmitter的实例，常用的事件有：
-
-- data：当有数据可读时触发
-- end：没有更多的数据可读时触发
-- error：在接收和写入过程中发生错误时触发
-- finish：所有数据已被写入到底层系统时触发
-
-### 从流中读取数据
-
-```js
-var fs = require("fs");
-var data = '';
-// 创建可读流
-var readerStream = fs.createReadStream('input.txt');
-// 设置编码为 utf8。
-readerStream.setEncoding('UTF8');
-// 处理流事件 --> data, end, and error
-readerStream.on('data', function(chunk) {
-   data += chunk;
-});
-readerStream.on('end',function(){
-   console.log(data);
-});
-readerStream.on('error', function(err){
-   console.log(err.stack);
-});
-console.log("程序执行完毕");
-```
-
-### 写入流
-
-```js
-var fs = require("fs");
-var data = 'hello world this is test';
-// 创建一个可以写入的流，写入到文件 output.txt 中
-var writerStream = fs.createWriteStream('output.txt');
-// 使用 utf8 编码写入数据
-writerStream.write(data,'UTF8');
-// 标记文件末尾
-writerStream.end();
-// 处理流事件 --> finish、error
-writerStream.on('finish', function() {
-    console.log("写入完成。");
-});
-writerStream.on('error', function(err){
-   console.log(err.stack);
-});
-console.log("程序执行完毕");
-```
-
-### 管道流
-
-管道提供了一个输出流到输入流的机制。通常我们用于从一个流中获取数据并将数据传递到另外一个流中。
-
-```js
-var fs = require("fs");
-// 创建一个可读流
-var readerStream = fs.createReadStream('input.txt');
-// 创建一个可写流
-var writerStream = fs.createWriteStream('output.txt');
-// 管道读写操作
-// 读取 input.txt 文件内容，并将内容写入到 output.txt 文件中
-readerStream.pipe(writerStream);
-console.log("程序执行完毕");
-```
-
-#### 链式流
-
-链式是通过连接输出流到另外一个流并创建多个流操作链的机制。链式流一般用于管道操作。
-
-```js
-//链式写入
-var fs = require("fs");
-var zlib = require('zlib');
-// 压缩 input.txt 文件为 input.txt.gz
-fs.createReadStream('input.txt')
-  .pipe(zlib.createGzip())
-  .pipe(fs.createWriteStream('input.txt.gz'));
-console.log("文件压缩完成。");
-
-//链式输出
-var fs = require("fs");
-var zlib = require('zlib');
-// 解压 input.txt.gz 文件为 input.txt
-fs.createReadStream('input.txt.gz')
-  .pipe(zlib.createGunzip())
-  .pipe(fs.createWriteStream('input.txt'));
-console.log("文件解压完成。");
-```
-
-## Events 事件
-
-Node.js几乎每一个API都支持回调函数，基本上都是用观察者模式实现的。
-
-<img src="README.assets/event_loop-20210615085321996.jpg" alt="img" style="zoom: 67%;" />
-
-### EventEmitters
-
-通过引入events模块，并实例化EventEmitter类来绑定和监听事件。
-
-```js
-var events = require('events');
-var eventEmitter = new events.EventEmitter();
-// 绑定事件及处理程序
-eventEmitter.on('eventName',eventHandler);
-// 触发事件
-eventEmitter.emit('eventName')
-```
-
-#### EventEmitter的属性
-
-##### 方法
-
-| 序号 | 方法 & 描述                                                  |
-| ---- | ------------------------------------------------------------ |
-| 1    | **addListener(event, listener)** 为指定事件添加一个监听器到监听器数组的尾部。 |
-| 2    | **on(event, listener)** 为指定事件注册一个监听器，接受一个字符串 event 和一个回调函数。 |
-| 3    | **once(event, listener)** 为指定事件注册一个单次监听器，即 监听器最多只会触发一次，触发后立刻解除该监听器。 |
-| 4    | **removeListener(event, listener)** 移除指定事件的某个监听器，监听器必须是该事件已经注册过的监听器。它接受两个参数，第一个是事件名称，第二个是回调函数名称。 |
-| 5    | **removeAllListeners([event])** 移除所有事件的所有监听器， 如果指定事件，则移除指定事件的所有监听器。 |
-| 6    | **setMaxListeners(n)** 默认情况下， EventEmitters 如果你添加的监听器超过 10 个就会输出警告信息。 setMaxListeners 函数用于改变监听器的默认限制的数量。 |
-| 7    | **listeners(event)** 返回指定事件的监听器数组。              |
-| 8    | **emit(event, [arg1], [arg2], [...])** 按监听器的顺序执行执行每个监听器，如果事件有注册监听返回 true，否则返回 false。 |
-
-##### 类方法
-
-| 序号 | 方法 & 描述                                                  |
-| ---- | ------------------------------------------------------------ |
-| 1    | **listenerCount(emitter, event)** 返回指定事件的监听器数量。 |
-
-##### 事件
-
-| 序号 | 事件 & 描述                                                  |
-| ---- | ------------------------------------------------------------ |
-| 1    | **newListener**<br />**event** - 字符串，事件名称<br />**listener** - 处理事件函数该事件在添加新监听器时被触发。 |
-| 2    | **removeListener** <br />**event** - 字符串，事件名称<br />**listener** - 处理事件函数从指定监听器数组中删除一个监听器。需要注意的是，此操作将会改变处于被删监听器之后的那些监听器的索引。 |
-
-#### 继承 EventEmitter
-
-大多数时候我们不会直接使用 EventEmitter，而是在对象中继承它。包括 fs、net、 http 在内的，只要是支持事件响应的核心模块都是 EventEmitter 的子类。
-原因有两点：
-首先，具有某个实体功能的对象实现事件符合语义， 事件的监听和发生应该是一个对象的方法。
-其次 JavaScript 的对象机制是基于原型的，支持 部分多重继承，继承 EventEmitter 不会打乱对象原有的继承关系。
-
-## 工具模块
-
-### Path模块
+### Path 路径
 
 ```js
 let path = require('path');
@@ -532,7 +204,7 @@ console.log(__dirname) //当前执行脚本所在的目录
 process.cwd() //当前执行node命令时候的文件夹目录名
 ```
 
-### OS模块
+### OS 操作系统
 
 | 序号 | 方法 & 描述                                                  |
 | ---- | ------------------------------------------------------------ |
@@ -550,7 +222,261 @@ process.cwd() //当前执行node命令时候的文件夹目录名
 | 12   | **os.cpus()** 返回一个对象数组，包含所安装的每个 CPU/内核的信息：型号、速度（单位 MHz）、时间（一个包含 user、nice、sys、idle 和 irq 所使用 CPU/内核毫秒数的对象）。 |
 | 13   | **os.networkInterfaces()** 获得网络接口列表。                |
 
-## 爬虫 cheerio
+### HTTP/HTTPS 网络
+
+#### node的浏览器端调试
+
+```shell
+node --inspect --inspect-brk server.js
+#可利用进程管理工具
+nodemon server.js
+```
+
+#### node进程管理工具
+
+supervisor
+nodemon
+forever
+pm2
+
+#### GET
+
+```js
+const http = require('http')
+const querystring = require('querystring')
+const https = require('https')
+
+const server = http.createServer((request, response) => {
+  var url = request.url.substr(1)
+  var data = ''
+  response.writeHeader(200, {
+    'content-type': 'application/json;charset=utf-8',
+    'Access-Control-Allow-Origin': '*'
+  })
+  https.get(`https://m.lagou.com/listmore.json${url}`, (res) => {
+    res.on('data', (chunk) => {
+      data += chunk
+    })
+    res.on('end', () => {
+      response.end(JSON.stringify({
+        ret: true,
+        data
+      }))
+    })
+  })
+})
+server.listen(8080, () => {
+  console.log('localhost:8080')
+})
+```
+
+#### POST
+
+```js
+const https = require('https')
+const querystring = require('querystring')
+
+const postData = querystring.stringify({
+  province: '上海',
+  city: '上海',
+  district: '宝山区',
+  address: '同济支路199号智慧七立方3号楼2-4层',
+  latitude: 43.0,
+  longitude: 160.0,
+  message: '求购一条小鱼',
+  contact: '13666666',
+  type: 'sell',
+  time: 1571217561
+})
+const options = {
+  protocol: 'https:',
+  hostname: 'ik9hkddr.qcloud.la',
+  method: 'POST',
+  port: 443,
+  path: '/index.php/trade/add_item',
+  headers: {
+    'Content-Type': 'application/x-www-form-urlencoded',
+    'Content-Length': Buffer.byteLength(postData)
+  }
+}
+function doPost() {
+  let data
+  let req = https.request(options, (res) => {
+    res.on('data', chunk => data += chunk)
+    res.on('end', () => {
+      console.log(data)
+    })
+  })
+  req.write(postData)
+  req.end()
+}
+```
+
+#### 跨域 jsonp
+
+```html
+<!--前端页面-->
+......
+<script>
+  function getData(data) {
+    console.log(data);
+  }
+</script>
+<!--第三方地址script导入-->
+<script src="http://localhost:8080/api/data?cb=getData"></script>
+......
+```
+
+```js
+const http = require('http')
+const url = require('url')
+const querystring = require('querystring')
+
+const server = http.createServer((req, res) => {
+  let urlStr = req.url
+  let urlObj = url.parse(urlStr, true)
+  switch(urlObj.pathname) {
+    case '/api/data':
+      res.write(`${urlObj.query.cb}('hello')`)
+      break;
+    default:
+      res.write('page not found.')
+  }
+  res.end()
+})
+
+server.listen(8080, () => {
+  console.log('localhost:8080')
+})
+```
+
+#### 跨域 CORS
+
+```html
+<!--前端页面-->
+......
+<script>
+  fetch('http://localhost:8080/api/data')
+  	.then(response => response.json())
+  	.then(result => {
+    	console.log(result)
+  })
+</script>
+......
+```
+
+```js
+const http = require('http')
+const url = require('url')
+const querystring = require('querystring')
+
+const server = http.createServer((req, res) => {
+  let urlStr = req.url
+  let urlObj = url.parse(urlStr, true)
+  switch(urlObj.pathname) {
+    case '/api/data':
+      res.writeHead(200, {
+        'content-type': 'application/json',
+        //通过加入同源策略实现跨域请求
+        'Access-Control-Allow-Origin': '*'
+      })
+      res.write('{"ret":true, "data": "hello"}')
+      break;
+    default:
+      res.write('page not found.')
+  }
+  res.end()
+})
+
+server.listen(8080, () => {
+  console.log('localhost:8080')
+})
+```
+
+#### 跨域 middleware (http-proxy-middware)
+
+```js
+const http = require('http')
+const proxy = require('http-proxy-middleware')
+
+http.createServer((req, res) => {
+  let url = req.url
+  res.writeHead(200, {
+    'Access-Control-Allow-Origin': '*'
+  })
+  if (/^\/api/.test(url)) {
+    let apiProxy = proxy('/api', { 
+      target: 'https://m.lagou.com',
+      changeOrigin: true,
+      pathRewrite: {
+        '^/api': ''
+      }
+    })
+    // http-proy-middleware 在Node.js中使用的方法
+    apiProxy(req, res)
+  } else {
+    switch (url) {
+      case '/index.html':
+        res.end('index.html')
+        break
+      case '/search.html':
+        res.end('search.html')
+        break
+      default:
+        res.end('[404]page not found.')
+    }
+  }
+}).listen(8080)
+```
+
+#### 爬虫 cheerio
+
+```js
+const https = require('https')
+const http = require('http')
+const cheerio = require('cheerio')
+
+http.createServer((request, response) => {
+  response.writeHead(200, {
+    'content-type': 'application/json;charset=utf-8'
+  })
+
+  const options = {
+    protocol: 'https:',
+    hostname: 'maoyan.com',
+    port: 443,
+    path: '/',
+    method: 'GET'
+  }
+  
+  const req = https.request(options, (res) => {
+    let data = ''
+    res.on('data', (chunk) => {
+      data += chunk
+    })
+  
+    res.on('end', () => {
+      filterData(data)
+    })
+  })
+  
+  function filterData(data) {
+    let $ = cheerio.load(data)
+    let $movieList = $('.movie-item')
+    let movies = []
+    $movieList.each((index, value) => {
+      movies.push({
+        title: $(value).find('.movie-title').attr('title'),
+        score: $(value).find('.movie-score i').text(),
+      })
+    })
+    
+    response.end(JSON.stringify(movies))
+  }
+  
+  req.end()
+}).listen(9000)
+```
 
 ```js
 //爬取图片
@@ -646,5 +572,398 @@ async function download(mp3Url,title){
 getPage(1);
 ```
 
+### Events 事件
 
+Node.js几乎每一个API都支持回调函数，基本上都是用观察者模式实现的。
+
+<img src="README.assets/event_loop-20210615085321996.jpg" alt="img" style="zoom: 67%;" />
+
+#### EventEmitters
+
+通过引入events模块，并实例化EventEmitter类来绑定和监听事件。
+
+```js
+var events = require('events');
+var eventEmitter = new events.EventEmitter();
+// 绑定事件及处理程序
+eventEmitter.on('eventName',eventHandler);
+// 触发事件
+eventEmitter.emit('eventName')
+```
+
+##### EventEmitter的属性
+
+###### 方法
+
+| 序号 | 方法 & 描述                                                  |
+| ---- | ------------------------------------------------------------ |
+| 1    | **addListener(event, listener)** 为指定事件添加一个监听器到监听器数组的尾部。 |
+| 2    | **on(event, listener)** 为指定事件注册一个监听器，接受一个字符串 event 和一个回调函数。 |
+| 3    | **once(event, listener)** 为指定事件注册一个单次监听器，即 监听器最多只会触发一次，触发后立刻解除该监听器。 |
+| 4    | **removeListener(event, listener)** 移除指定事件的某个监听器，监听器必须是该事件已经注册过的监听器。它接受两个参数，第一个是事件名称，第二个是回调函数名称。 |
+| 5    | **removeAllListeners([event])** 移除所有事件的所有监听器， 如果指定事件，则移除指定事件的所有监听器。 |
+| 6    | **setMaxListeners(n)** 默认情况下， EventEmitters 如果你添加的监听器超过 10 个就会输出警告信息。 setMaxListeners 函数用于改变监听器的默认限制的数量。 |
+| 7    | **listeners(event)** 返回指定事件的监听器数组。              |
+| 8    | **emit(event, [arg1], [arg2], [...])** 按监听器的顺序执行执行每个监听器，如果事件有注册监听返回 true，否则返回 false。 |
+
+###### 类方法
+
+| 序号 | 方法 & 描述                                                  |
+| ---- | ------------------------------------------------------------ |
+| 1    | **listenerCount(emitter, event)** 返回指定事件的监听器数量。 |
+
+###### 事件
+
+| 序号 | 事件 & 描述                                                  |
+| ---- | ------------------------------------------------------------ |
+| 1    | **newListener**<br />**event** - 字符串，事件名称<br />**listener** - 处理事件函数该事件在添加新监听器时被触发。 |
+| 2    | **removeListener** <br />**event** - 字符串，事件名称<br />**listener** - 处理事件函数从指定监听器数组中删除一个监听器。需要注意的是，此操作将会改变处于被删监听器之后的那些监听器的索引。 |
+
+##### 继承 EventEmitter
+
+大多数时候我们不会直接使用 EventEmitter，而是在对象中继承它。包括 fs、net、 http 在内的，只要是支持事件响应的核心模块都是 EventEmitter 的子类。
+原因有两点：
+首先，具有某个实体功能的对象实现事件符合语义， 事件的监听和发生应该是一个对象的方法。
+其次 JavaScript 的对象机制是基于原型的，支持 部分多重继承，继承 EventEmitter 不会打乱对象原有的继承关系。
+
+### FS 文件系统
+
+#### Promise方法
+
+在NodeJS版本10之后提供了Promise方法，返回的均为Promise对象
+
+```js
+const fsPromises = require('fs').promises
+(async () => {
+  let result = await fsPromises.readFile('./test.log')
+  console.log(result)
+})()
+```
+
+#### 回调方法
+
+##### 读取文件
+
+```js
+const fs= require('fs')
+
+//同步读取
+var data = fs.readFileSync('hello.txt');
+//异步读取
+fs.readFile('hello.txt',function(err, data){
+  if(err) throw err;
+  console.log(data);
+})
+fs.writeFile('test.txt','helloworld',{flag:'a', encoding:'utf-8'}, function(err){
+  if(err) console.log("error",err)
+})
+```
+
+##### 打开文件
+
+```js
+// fs.open(path, flags[, mode], callback)
+fs.open('input.txt', 'r+', function(err, fd) {
+  if(err) {
+    return console.error(err);
+  }
+  console.log("打开成功！")
+});
+```
+
+- **path** - 文件的路径。
+- **flags** - 文件打开的行为。具体值详见下文。
+- **mode** - 设置文件模式(权限)，文件创建默认权限为 0666(可读，可写)。
+- **callback** - 回调函数，带有两个参数如：callback(err, fd)。
+
+| Flag | 描述                                                   |
+| ---- | ------------------------------------------------------ |
+| r    | 以读取模式打开文件。如果文件不存在抛出异常。           |
+| r+   | 以读写模式打开文件。如果文件不存在抛出异常。           |
+| rs   | 以同步的方式读取文件。                                 |
+| rs+  | 以同步的方式读取和写入文件。                           |
+| w    | 以写入模式打开文件，如果文件不存在则创建。             |
+| wx   | 类似 'w'，但是如果文件路径存在，则文件写入失败。       |
+| w+   | 以读写模式打开文件，如果文件不存在则创建。             |
+| wx+  | 类似 'w+'， 但是如果文件路径存在，则文件读写失败。     |
+| a    | 以追加模式打开文件，如果文件不存在则创建。             |
+| ax   | 类似 'a'， 但是如果文件路径存在，则文件追加失败。      |
+| a+   | 以读取追加模式打开文件，如果文件不存在则创建。         |
+| ax+  | 类似 'a+'， 但是如果文件路径存在，则文件读取追加失败。 |
+
+##### 获取文件信息
+
+```js
+// fs.stat(path, callback)
+fs.stat('test.js', function(err, stats) {
+  console.log(stats.isFile());
+})
+```
+
+states类中方法有：
+
+| 方法                      | 描述                                                         |
+| ------------------------- | ------------------------------------------------------------ |
+| stats.isFile()            | 如果是文件返回 true，否则返回 false。                        |
+| stats.isDirectory()       | 如果是目录返回 true，否则返回 false。                        |
+| stats.isBlockDevice()     | 如果是块设备返回 true，否则返回 false。                      |
+| stats.isCharacterDevice() | 如果是字符设备返回 true，否则返回 false。                    |
+| stats.isSymbolicLink()    | 如果是软链接返回 true，否则返回 false。                      |
+| stats.isFIFO()            | 如果是FIFO，返回true，否则返回 false。FIFO是UNIX中的一种特殊类型的命令管道。 |
+| stats.isSocket()          | 如果是 Socket 返回 true，否则返回 false。                    |
+
+##### 写入文件
+
+```js
+// fs.writeFile(file, data[, options], callback)
+fs.writeFile('input.txt', '我是通过fs.writeFile 写入文件的内容',  function(err) {
+   if (err) {
+       return console.error(err);
+   }
+   fs.readFile('input.txt', function (err, data) {
+      if (err) {
+         return console.error(err);
+      }
+      console.log("异步读取文件数据: " + data.toString());
+   });
+});
+```
+
+- **file** - 文件名或文件描述符。
+- **data** - 要写入文件的数据，可以是 String(字符串) 或 Buffer(缓冲) 对象。
+- **options** - 该参数是一个对象，包含 {encoding, mode, flag}。默认编码为 utf8, 模式为 0666 ， flag 为 'w'
+- **callback** - 回调函数，回调函数只包含错误信息参数(err)，在写入失败时返回。
+
+##### 追加文件
+
+```js
+fs.appendFile('dir', 'data', (err) => {})
+```
+
+##### 读取文件
+
+```js
+// fs.read(fd, buffer, offset, length, position, callback)
+```
+
+- **fd** - 通过 fs.open() 方法返回的文件描述符。
+- **buffer** - 数据写入的缓冲区。
+- **offset** - 缓冲区写入的写入偏移量。
+- **length** - 要从文件中读取的字节数。
+- **position** - 文件读取的起始位置，如果 position 的值为 null，则会从当前文件指针的位置读取。
+- **callback** - 回调函数，有三个参数err, bytesRead, buffer，err 为错误信息， bytesRead 表示读取的字节数，buffer 为缓冲区对象。
+
+##### 关闭文件
+
+```js
+// fs.close(fd, callback)
+var fs = require("fs");
+var buf = new Buffer.alloc(1024);
+fs.open('input.txt', 'r+', function(err, fd) {
+   if (err) {
+       return console.error(err);
+   }
+   fs.read(fd, buf, 0, buf.length, 0, function(err, bytes){
+      if (err){
+         console.log(err);
+      }
+      // 仅输出读取的字节
+      if(bytes > 0){
+         console.log(buf.slice(0, bytes).toString());
+      }
+      // 关闭文件
+      fs.close(fd, function(err){
+         if (err){
+            console.log(err);
+         } 
+         console.log("文件关闭成功");
+      });
+   });
+});
+```
+
+- **fd** - 通过 fs.open() 方法返回的文件描述符。
+- **callback** - 回调函数，没有参数。
+
+##### 截取文件
+
+```js
+// fs.ftruncate(fd, len, callback)
+fs.ftruncate(fd, 10, function(err){
+  if (err){
+    console.log(err);
+  } 
+});
+```
+
+- **fd** - 通过 fs.open() 方法返回的文件描述符。
+- **len** - 文件内容截取的长度。
+- **callback** - 回调函数，没有参数。
+
+##### 删除文件
+
+```js
+// fs.unlink(path, callback)
+fs.unlink('input.txt', function(err) {
+   if (err) {
+       return console.error(err);
+   }
+   console.log("文件删除成功！");
+});
+```
+
+##### 创建目录
+
+```js
+// fs.mkdir(path[, options], callback)
+fs.mkdir("/tmp/test/",function(err){
+   if (err) {
+       return console.error(err);
+   }
+   console.log("目录创建成功。");
+});
+```
+
+- **path** - 文件路径。
+- options 参数可以是：
+  - **recursive** - 是否以递归的方式创建目录，默认为 false。
+  - **mode** - 设置目录权限，默认为 0777。
+- **callback** - 回调函数，没有参数。
+
+##### 读取目录
+
+```js
+// fs.readdir(path, callback)
+fs.readdir("/tmp/",function(err, files){
+   if (err) {
+       return console.error(err);
+   }
+   files.forEach( function (file){
+       console.log( file );
+   });
+});
+```
+
+- **path** - 文件路径。
+- **callback** - 回调函数，回调函数带有两个参数err, files，err 为错误信息，files 为 目录下的文件数组列表。
+
+##### 删除目录
+
+```js
+// fs.rmdir(path, callback)
+fs.rmdir("/tmp/test",function(err){
+   if (err) {
+       return console.error(err);
+   }
+});
+```
+
+##### 修改目录
+
+```js
+// fs.rmdir(path, callback)
+fs.rmdir("./logs", "./log", () => {
+});
+```
+
+### 
+
+### Stream 流
+
+Node.js有四种流类型：
+
+- Readable - 可读操作
+- Writeable - 可写操作
+- Duplex - 可读可写操作
+- Transform - 操作被写入数据，然后读出结果。
+
+所有的Stream对象都是EventEmitter的实例，常用的事件有：
+
+- data：当有数据可读时触发
+- end：没有更多的数据可读时触发
+- error：在接收和写入过程中发生错误时触发
+- finish：所有数据已被写入到底层系统时触发
+
+#### 从流中读取数据
+
+```js
+var fs = require("fs");
+var data = '';
+// 创建可读流
+var readerStream = fs.createReadStream('input.txt');
+// 设置编码为 utf8。
+readerStream.setEncoding('UTF8');
+// 处理流事件 --> data, end, and error
+readerStream.on('data', function(chunk) {
+   data += chunk;
+});
+readerStream.on('end',function(){
+   console.log(data);
+});
+readerStream.on('error', function(err){
+   console.log(err.stack);
+});
+console.log("程序执行完毕");
+```
+
+#### 写入流
+
+```js
+var fs = require("fs");
+var data = 'hello world this is test';
+// 创建一个可以写入的流，写入到文件 output.txt 中
+var writerStream = fs.createWriteStream('output.txt');
+// 使用 utf8 编码写入数据
+writerStream.write(data,'UTF8');
+// 标记文件末尾
+writerStream.end();
+// 处理流事件 --> finish、error
+writerStream.on('finish', function() {
+    console.log("写入完成。");
+});
+writerStream.on('error', function(err){
+   console.log(err.stack);
+});
+console.log("程序执行完毕");
+```
+
+#### 管道流
+
+管道提供了一个输出流到输入流的机制。通常我们用于从一个流中获取数据并将数据传递到另外一个流中。
+
+```js
+var fs = require("fs");
+// 创建一个可读流
+var readerStream = fs.createReadStream('input.txt');
+// 创建一个可写流
+var writerStream = fs.createWriteStream('output.txt');
+// 管道读写操作
+// 读取 input.txt 文件内容，并将内容写入到 output.txt 文件中
+readerStream.pipe(writerStream);
+console.log("程序执行完毕");
+```
+
+#### 链式流
+
+链式是通过连接输出流到另外一个流并创建多个流操作链的机制。链式流一般用于管道操作。
+
+```js
+//链式写入
+var fs = require("fs");
+var zlib = require('zlib');
+// 压缩 input.txt 文件为 input.txt.gz
+fs.createReadStream('input.txt')
+  .pipe(zlib.createGzip())
+  .pipe(fs.createWriteStream('input.txt.gz'));
+console.log("文件压缩完成。");
+
+//链式输出
+var fs = require("fs");
+var zlib = require('zlib');
+// 解压 input.txt.gz 文件为 input.txt
+fs.createReadStream('input.txt.gz')
+  .pipe(zlib.createGunzip())
+  .pipe(fs.createWriteStream('input.txt'));
+console.log("文件解压完成。");
+```
 
