@@ -1,4 +1,4 @@
-#  Node.js
+# Node.js
 
 ## 介绍
 
@@ -990,5 +990,191 @@ const hash = crypto.createHmac('sha256', secret)
                    .update('I love you')
                    .digest('hex')
 console.log(hash)
+```
+
+## 路由
+
+```js
+var http = require('http')
+var fs = require('fs')
+
+http.createServer( function ( req, res ) {
+  switch ( req.url ) {
+    case '/home':
+      res.write('home')
+      res.end()
+      break
+    case '/login': 
+      fs.readFile( './static/login.html',function ( error , data ) {
+        if ( error ) throw error  
+        res.write( data )
+        res.end()
+      })
+      break
+    case '/fulian.jpg':
+      fs.readFile( './static/fulian.jpg', 'binary', function( error , data ) {
+        if( error ) throw error 
+        res.write( data, 'binary' )
+        res.end()
+      })
+      break
+    default: 
+      break
+   }
+ }).listen( 8000, 'localhost', function () {
+   console.log( '服务器运行在： http://localhost:8000' )
+ })
+```
+
+## 静态资源服务器
+
+```js
+// /modules/readStaticFile.js
+// 引入依赖的模块
+var path = require('path')
+var fs = require('fs')
+var mime = require('mime')
+
+function readStaticFile(res, filePathname) {
+
+  var ext = path.parse(filePathname).ext
+  var mimeType = mime.getType(ext)
+
+  // 判断路径是否有后缀, 有的话则说明客户端要请求的是一个文件 
+  if (ext) {
+    // 根据传入的目标文件路径来读取对应文件
+    fs.readFile(filePathname, (err, data) => {
+    // 错误处理
+      if (err) {
+        res.writeHead(404, { "Content-Type": "text/plain" })
+        res.write("404 - NOT FOUND")
+        res.end()
+      } else {
+        res.writeHead(200, { "Content-Type": mimeType })
+        res.write(data)
+        res.end()
+      }
+    });
+    // 返回 true 表示, 客户端想要的 是 静态文件
+    return true
+  } else {
+    // 返回 false 表示, 客户端想要的 不是 静态文件
+    return false
+  }
+}
+
+// 导出函数
+module.exports = readStaticFile
+```
+
+```js
+// 引入相关模块
+var http = require('http');
+var url = require('url');
+var path = require('path');
+var readStaticFile = require('./modules/readStaticFile');
+
+// 搭建 HTTP 服务器
+var server = http.createServer(function(req, res) {
+  var urlObj = url.parse(req.url);
+  var urlPathname = urlObj.pathname;
+  var filePathname = path.join(__dirname, "/public", urlPathname);
+
+  // 读取静态文件
+  readStaticFile(res, filePathname);
+});
+
+// 在 3000 端口监听请求
+server.listen(3000, function() {
+  console.log("服务器运行中.");
+  console.log("正在监听 3000 端口:")
+})
+```
+
+## Express
+
+```shell
+yarn init -y #创建package.json
+yarn add express -S #安装express依赖
+```
+
+### 路由
+
+```js
+const express = require('express')
+const app = express()
+
+//中间件栈
+const middlewares = [
+  (req, res, next) => {
+    console.log(0)
+    next()
+  }, (req, res, next) => {
+    console.log(1)
+    next()
+  }, (req, res) => {
+    console.log(2)
+  }
+]
+
+//回调函数又被称为中间件
+app.use('/', middlewares)
+
+app.listen(8080, () => {
+  console.log('localhost:8080')
+})
+```
+
+### express路由中间件
+
+```js
+// router/index.js
+const express = require('express')
+
+
+//路由中间件
+const router = express.Router()
+
+router.get('/', (req, res, next) => {
+  res.send('hello')
+})
+
+router.get('/index', (req, res, next) => {
+  const id = req.query
+  //res.send(query)
+  res.json(query)
+})
+
+router.post('/index', (req, res, next) => {
+  const data = req.body
+  req.send(data)
+})
+
+router.put('/index', (req, res, next) => {
+  res.send('put index')
+})
+
+module.exports = router
+```
+
+```js
+const express = require('express')
+const app = express()
+const router = require('./router/index')
+// bodyparse中间件
+const bodyParser = require('body-parser')
+
+//用来解析 application/www-form-urlencoded 表单数据,express已经集成
+//app.use(bodyParser.urlencoded({ extended: false }))
+app.use(express.urlencoded({ extended: false }))
+
+//解析application/json
+app.use(express.json())
+
+app.use('/',router)
+
+app.listen(8080, () => {
+  console.log('localhost:8080')
+})
 ```
 
