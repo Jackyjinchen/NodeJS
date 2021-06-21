@@ -1171,10 +1171,143 @@ app.use(express.urlencoded({ extended: false }))
 //解析application/json
 app.use(express.json())
 
+//静态资源服务中间件（内置中间件）
+app.use(express.static('./public'))
+
 app.use('/',router)
 
 app.listen(8080, () => {
   console.log('localhost:8080')
 })
+```
+
+### 页面渲染
+
+SSR：后端（服务端）渲染
+
+CSR：前端（客户端）渲染
+
+### express模板
+
+ejs、pug、jade、art-template等。
+
+#### art-template
+
+http://aui.github.io/art-template
+
+```shell
+yarn add art-template express-art-template -S
+```
+
+##### 服务端
+
+```js
+var express = require('express');
+var path = require('path')
+var app = express();
+
+// view engine setup
+app.engine('art', require('express-art-template'));
+app.set('view options', {
+    debug: process.env.NODE_ENV !== 'production',
+  	escape: false
+});
+// 这里在目录下的views文件夹为art模板，在其中配置list.art模板文件
+app.set('views', path.join(__dirname, 'views'));
+app.set('view engine', 'art');
+
+// routes
+app.get('/', function (req, res) {
+    res.render('index.art', {
+        user: {
+            name: 'aui',
+            tags: ['art', 'template', 'nodejs']
+        }
+    });
+});
+```
+
+```js
+//list.art
+{
+  "ret" : true,
+  "data" : {{data}}
+}
+```
+
+```js
+let dataArray = []
+for(var i =0; i < 100; i++){
+  dataArray.push('line ' + i)
+}
+res.set('Content-Type', 'application/json; charset=utf-8')
+res.render('list', {
+  data: JSON.stringfy(dataArray)
+})
+```
+
+##### 前端页面
+
+```js
+let templateStr = `
+	<ul>
+		{{each data}}
+		<li>{{$value}}</li>
+		{{/each}}
+	</ul>
+`
+let html = template.render('templateStr, {
+	data: result.data                           
+})
+$('#list').html(html)
+```
+
+## MongoDB
+
+一个基于分布式文件存储的数据库，由C++编写。
+
+| SQL术语     | MongoDB术语 | 解释/说明                            |
+| ----------- | ----------- | ------------------------------------ |
+| database    | database    | 数据库                               |
+| table       | collection  | 数据库表/集合                        |
+| row         | document    | 数据记录行/文档                      |
+| column      | field       | 数据字段/域                          |
+| index       | index       | 索引                                 |
+| table joins |             | 表连接，MongoDB不支持                |
+| primary key | primary key | 主键，MongoDB自动将_id字段设置为主键 |
+
+```shell
+mongod --config /usr/local/etc/mongod.conf
+mongo
+```
+
+### 数据库常用命令
+
+```shell
+db #查询当前数据库
+show dbs #显示所有数据
+use music #创建/切换数据库
+db.stats() #显示数据库状态
+db.version() #查询db版本
+db.getMongo() #当前db连接的地址
+db.dropDatabase() #删除数据库
+```
+
+### Collection集合操作
+
+```shell
+db.createCollection('jaychou') #创建集合
+db.getCollectionNames() #获取当前DB下的所有集合
+```
+
+### Document文档操作
+
+```shell
+db.jaychou.insert([{name:'七里香', release: '1900-01-01'}]) #插入数据
+db.jaychou.save(...) #insert的别名方法
+
+db.jaychou.find() #查询数据
+
+db.jaychou.update({name:'七里香'}, {$set: {release: '2020-01-01'}}) #修改数据
 ```
 
