@@ -1303,11 +1303,184 @@ db.getCollectionNames() #获取当前DB下的所有集合
 ### Document文档操作
 
 ```shell
-db.jaychou.insert([{name:'七里香', release: '1900-01-01'}]) #插入数据
+db.jaychou.insert([{name:'七里香', release: '1900-01-01', num: 100}]) #插入数据
 db.jaychou.save(...) #insert的别名方法
 
-db.jaychou.find() #查询数据
-
 db.jaychou.update({name:'七里香'}, {$set: {release: '2020-01-01'}}) #修改数据
+# 第一个false参数表示不存在就不创建。第二个参数表示遇到匹配是否继续寻找
+db.jaychou.update({name:'七里香'}, {$inc: {number: 200}}, false， true) #在原数的基础上增加 number+=200
+
+db.jaychou.remove({name:'七里香'})
+
+db.jaychou.find() #查询所有
+db.jaychou.distinct('name')
+db.jaychou.find({release:'2012-12-05'}) #条件等于
+db.jaychou.find({age:{$gt:22}}) #大于 greater than
+db.jaychou.find({age:{$lt:22}}) #小于
+$gte #大于等于
+$lte #小于等于
+db.jaychou.find({age:{$gte:23,$lte:26}}) # 23 <= age <=26
+
+db.jaychou.find({name:/mongo}) #查询name中包含mongo的数据，相当于 %mongo%
+db.jaychou.find({name:/^mongo/}) #查询以mongo开头的，相当于 mongo%
+db.jaychou.find({}, {name:1, release：1}) #查询指定列name和release
+db.jaychou.find({age:{$gt:25}},{name:1,age:1}) #select name, age from jaychou where age > 25
+# sort无论放在哪里，均先执行
+db.jaychou.find().sort({age:1}) #按照age升序排序
+db.jaychou.find().limit(5) #查询前五条数据 select top 5 * from jaychou
+db.jaychou.find().skip(3) #查询结果跳过前三条
+
+db.jaychou.find({$or:[{release:'2020-01-01'}, {release:'2020-01-02'}]}) #or查询
+db.jaychou.findOne() #查询第一条数据
+db.jaychou.find({age:{$gte:25}}).count() #传结果集的记录条数
+```
+
+## Node.js项目
+
+### 架构
+
+**前端**（Frontend）
+
+- 前端工程化环境（webpack）
+- CSS预处理工具（SASS）
+- JS库：jQuery
+- SPA single page application，路由：SME-Router
+- JS模块化：ES module， CommonJS Module 
+- UI组件库：Bootstrap（AdminLTE）
+- ......
+
+**后端**（Backend）
+
+- Node.js
+- Express
+- MongoDB (Mongoose)
+- ......
+
+### Webpack
+
+**webpack** 是一个用于现代 JavaScript 应用程序的 *静态模块打包工具*。当 webpack 处理应用程序时，它会在内部构建一个依赖图(dependency graph)，此依赖图对应映射到项目所需的每个模块，并生成一个或多个 *bundle*。
+
+<img src="README.assets/image-20210622102357027.png" alt="image-20210622102357027" style="zoom: 33%;" />
+
+```shell
+yarn add webpack webpack-cli html-webpack-plugin webpack-dev-server copy-webpack-plugin clean-webpack-plugin -D
+webpack --config #产生webpack.config.js
+```
+
+```js
+//package.json
+{
+  "name":"frontend",
+  "version":"1.0.0",
+  "main":"index.js",
+  "license":"MIT",
+  "devDependencies": {
+    //......
+  },
+  "scripts": {
+    "build": "npx webpack",
+    "serve": "npx webpack-dev-server"
+  }
+}
+
+```
+
+```js
+//webpack.config.js
+const path = require('path')
+const HtmlWebpackPlugin = require('html-webpack-plugin')
+const CopyPlugin = require('copy-webpack-plugin')
+//自动删除掉dist重新生成
+const CleanWebpackPlugin = require('clean-webpack-plugin')
+module.exports = {
+  //配置环境
+  mode: 'development',
+  devtool:'source-map',
+  //配置入口文件
+  entry: {
+    //把文件放在js文件夹下
+    'js/app': './src/app.js'
+  P，
+  //配置出口
+  output:{
+  	path: path.join(__dirname, './dist'),
+    filename:'[name]-[hash:6].js'
+  },
+  
+  // art-template使用
+  module: {
+    rules: [
+      {
+        test:/\.art$/,
+        exclude:/(node_modules)/,
+        use: {
+          loader:'art-template-loader'
+        }
+      }
+    ]
+  }
+  
+  
+  //配置插件
+  plugins: [
+    new HtmlWebpackPlugin({
+      template: path.join(__dirname,'./public/index.html'),
+      filename: 'index.html',
+      inject: true
+    }),
+    new CopyPlugin({
+      patterns:[
+        {
+          from:'./public/*.ico',
+          to:path.join(__dirname,'./dist/favicon.ico')
+        },
+        {
+          from:'./public/libs/',
+          to:path.join(__dirname,'./dist/libs/')
+        }
+      ]
+    })
+  ],
+    
+  //配置server
+  devServer:{
+    contentBase: path.join(__dirname, './dist'),
+    compress: true,
+    prot: 8080
+  }
+}
+```
+
+```js
+//app.js
+import indexTpl from './views/index.art'
+import signinTpl from './views/signin.art'
+const html = indexTpl({})
+$('#root').html(html)
+```
+
+### Router
+
+采用 SME Router。仿照express风格
+
+```js
+// ./src/routes/index.js
+import SMERouter from 'sme-router'
+const router = new SMERouter('router-view')
+
+import indexTpl from '../views/index.art'
+import signinTpl from '../views/signin.art'
+
+const htmlIndex = indexTpl({})
+const htmlSignin = signinTpl({})
+
+router.route('/', (req, res, next) => {
+	res.render(htmlIndex)
+})
+
+router.route('/signin', (req, res, next) => {
+	res.render(htmlSignin)
+})
+
 ```
 
