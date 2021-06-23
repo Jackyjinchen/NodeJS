@@ -1364,6 +1364,7 @@ db.jaychou.find({age:{$gte:25}}).count() #传结果集的记录条数
 
 ```shell
 yarn add webpack webpack-cli html-webpack-plugin webpack-dev-server copy-webpack-plugin clean-webpack-plugin -D
+yarn add css-loader style-loader -D
 webpack --config #产生webpack.config.js
 ```
 
@@ -1416,6 +1417,10 @@ module.exports = {
         use: {
           loader:'art-template-loader'
         }
+      },
+      {
+        test:/\.css$/,
+        loaders:['style-loader', 'css-loader']
       }
     ]
   }
@@ -1482,5 +1487,6 @@ router.route('/signin', (req, res, next) => {
 	res.render(htmlSignin)
 })
 
+router.go('/')
 ```
 
