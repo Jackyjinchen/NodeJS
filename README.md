@@ -393,6 +393,8 @@ server.listen(8080, () => {
 })
 ```
 
+
+
 #### 跨域 middleware (http-proxy-middware)
 
 ```js
@@ -1278,7 +1280,7 @@ $('#list').html(html)
 
 ```shell
 mongod --config /usr/local/etc/mongod.conf
-mongo
+mongo #启动mongo
 ```
 
 ### 数据库常用命令
@@ -1475,12 +1477,15 @@ const router = new SMERouter('router-view')
 
 import indexTpl from '../views/index.art'
 import signinTpl from '../views/signin.art'
+import usersTpl from '../views/users.art'
 
 const htmlIndex = indexTpl({})
 const htmlSignin = signinTpl({})
 
 router.route('/', (req, res, next) => {
 	res.render(htmlIndex)
+  // 内容页面载入
+  $('#content').html(usersTpl())
 })
 
 router.route('/signin', (req, res, next) => {
@@ -1488,5 +1493,142 @@ router.route('/signin', (req, res, next) => {
 })
 
 router.go('/')
+```
+
+### 服务端
+
+```shell
+yarn global add express-generator #express生成器
+express --view=ejs myapp
+```
+
+#### Mongoose
+
+```js
+//通过mongoose操作MongoDB
+var mongoose = require('mongoose');
+mongoose.connect('mongodb://localhost/test');
+
+var db = mongoose.connection;
+db.on('error', console.error.bind(console, 'connection error:'));
+db.once('open', function() {
+  // we're connected!
+});
+
+//定义一个Schema，并编译成一个Model
+//model 是构造 document 的 Class。 它的属性和行为都会被声明在 schema。
+var kittySchema = mongoose.Schema({
+  name: String
+});
+var Kitten = mongoose.model('Kitten', kittySchema);
+//定义一个document
+var felyne = new Kitten({ name: 'Felyne' });
+
+// NOTE: methods must be added to the schema before compiling it with mongoose.model()
+kittySchema.methods.speak = function () {
+  var greeting = this.name
+    ? "Meow name is " + this.name
+    : "I don't have a name";
+  console.log(greeting);
+}
+var Kitten = mongoose.model('Kitten', kittySchema);
+
+var fluffy = new Kitten({ name: 'fluffy' });
+fluffy.speak(); // "Meow name is fluffy"
+
+//通过save方法保存到数据库中
+fluffy.save(function (err, fluffy) {
+  if (err) return console.error(err);
+  fluffy.speak();
+});
+//查询model中的数据
+Kitten.find(function (err, kittens) {
+  if (err) return console.error(err);
+  console.log(kittens);
+})
+```
+
+#### Bcrypt
+
+```js
+const bcrypt = require('bcrypt')
+
+exports.hash = (myPlaintextPassword) => {
+  bcrypt.hash(myPlaintextPassword, 10, function(err, hash) {
+    console.log(hash)
+  })
+}
+```
+
+#### 跨域
+
+##### webpack配置解决
+
+```js
+//webpack.config.js
+//修改devServer
+//配置server
+module.exports = {
+  //...
+  devServer:{
+    contentBase: path.join(__dirname, './dist'),
+    compress: true,
+    port: 8080,
+    proxy: {
+      "/api": {
+        target: "http://localhost:3000"
+      }
+    }
+  }
+}
+```
+
+##### 服务端cors解决
+
+```js
+var cors = require('cors')
+app.use(cors()) //使用跨域
+```
+
+#### jQuery
+
+```js
+$('#users-page-list li:nth-child(2)').addClass('active')
+// 在list中除了第一个和最后一个的点击事件
+$('users-page-list li:not(:first-child,:last-child)').on('click', function() {
+  //移除兄弟节点的所有active的类标签，为当前对象添加active类便签 siblings()兄弟节点
+  $(this).addClass('active').siblings().removeClass('active')
+})
+```
+
+## 中间件
+
+### express中间件机制
+
+```js
+const middleware1 = (req, res, next) => {
+  console.log('m1')
+  next()
+}
+const middleware2 = (req, res, next) => {
+  console.log('m2')
+  next()
+}
+const middleware3 = (req, res, next) => {
+  console.log('m3')
+  next()
+}
+
+function run(req, reswwo) {
+  let middlewares = [middlewares1, middlewares2, middlewares3]
+  const next = () => {
+    let middleware = middlewares.shift()
+    if(middleware) {
+      middleware(req, res, next)
+    }
+  }
+  next()
+}
+run()
 ```
 
