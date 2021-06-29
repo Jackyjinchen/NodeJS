@@ -1603,7 +1603,7 @@ $('users-page-list li:not(:first-child,:last-child)').on('click', function() {
 
 ## 中间件
 
-### express中间件机制
+### express中间件
 
 ```js
 const middleware1 = (req, res, next) => {
@@ -1630,5 +1630,292 @@ function run(req, reswwo) {
   next()
 }
 run()
+```
+
+### koa中间件
+
+<img src="README.assets/bV6DZG.png" alt="clipboard.png" style="zoom:67%;" />
+
+## Koa
+
+```js
+const Koa = require('koa')
+const app = new Koa()
+const logger = require('./logger.js')
+//自制中间件
+app.use(logger)
+
+app.use((context,next) => {
+  console.log(context)
+})
+
+app.listen(8080)
+```
+
+```js
+function log(ctx) {
+  console.log(ctx.method, ctx.header.host, ctx.url)
+}
+
+async function logger(ctx, next) {
+  log(ctx)
+  await next()
+}
+
+module.exports = logger
+```
+
+### Router
+
+#### 原生编写
+
+```js
+const Koa = require('koa')
+const fs = require('fs')
+const app = new Koa()
+
+/**
+ * 用Promise封装异步读取文件方法
+ * @param  {string} page html文件名称
+ * @return {promise}      
+ */
+function render( page ) {
+  return new Promise(( resolve, reject ) => {
+    let viewUrl = `./view/${page}`
+    fs.readFile(viewUrl, "binary", ( err, data ) => {
+      if ( err ) {
+        reject( err )
+      } else {
+        resolve( data )
+      }
+    })
+  })
+}
+
+/**
+ * 根据URL获取HTML内容
+ * @param  {string} url koa2上下文的url，ctx.url
+ * @return {string}     获取HTML文件内容
+ */
+async function route( url ) {
+  let view = '404.html'
+  switch ( url ) {
+    case '/':
+      view = 'index.html'
+      break
+    case '/index':
+      view = 'index.html'
+      break
+    case '/todo':
+      view = 'todo.html'
+      break
+    case '/404':
+      view = '404.html'
+      break
+    default:
+      break
+  }
+  let html = await render( view )
+  return html
+}
+
+app.use( async(ctx) => {
+  let url = ctx.request.url
+  let html = await route(url)
+  ctx.body = html
+})
+
+app.listen(3000)
+```
+
+#### koa-router
+
+```shell
+yarn add @koa/router
+```
+
+```js
+const Koa = require('koa'); // 引入koa
+const Router = require('koa-router'); // 引入koa-router
+
+const app = new Koa(); // 创建koa应用
+const router = new Router(); // 创建路由，支持传递参数
+
+// 指定一个url匹配
+// Koa-router 请求方式： get 、 put 、 post 、 patch 、 delete 、 del
+router.get('/', async (ctx) => {
+    ctx.type = 'html';
+    ctx.body = '<h1>hello world!</h1>';
+})
+    .get("/users", async (ctx) => {
+        ctx.body = '获取用户列表';
+    })
+    .get("/users/:id", async (ctx) => {
+        const { id } = ctx.params
+        ctx.body = `获取id为${id}的用户`;
+    })
+    .post("/users", async (ctx) => {
+        ctx.body = `创建用户`;
+    })
+    .put("/users/:id", async (ctx) => {
+        const { id } = ctx.params
+        ctx.body = `修改id为${id}的用户`;
+    })
+    .del("/users/:id", async (ctx) => {
+        const { id } = ctx.params
+        ctx.body = `删除id为${id}的用户`;
+    })
+    .all("/users/:id", async (ctx) => {
+        ctx.body = ctx.params;
+    });
+
+// 调用router.routes()来组装匹配好的路由，返回一个合并好的中间件
+// 调用router.allowedMethods()获得一个中间件，当发送了不符合的请求时，会返回 `405 Method Not Allowed` 或 `501 Not Implemented`
+app.use(router.routes());
+app.use(router.allowedMethods({ 
+    // throw: true, // 抛出错误，代替设置响应头状态
+    // notImplemented: () => '不支持当前请求所需要的功能',
+    // methodNotAllowed: () => '不支持的请求方式'
+}));
+
+// 启动服务监听本地3000端口
+app.listen(3000, () => {
+    console.log('应用已经启动，http://localhost:3000');
+})
+```
+
+##### 请求参数获取值
+
+```js
+// params参数
+router.get('/:category/:title', (ctx, next) => {
+  console.log(ctx.params);
+  // => { category: 'programming', title: 'how-to-node' }
+});
+
+// query参数
+router.get("/users", async (ctx) => {
+    console.log('查询参数', ctx.query);
+    ctx.body = '获取用户列表';
+})
+```
+
+##### 路由使用中间件
+
+```js
+// 先后设置两个中间件
+router
+  .use(session())
+  .use(authorize());
+// 给指定地址使用中间件
+router.use('/users', userAuth());
+// 给数组里面的地址使用中间件
+router.use(['/users', '/admin'], userAuth());
+app.use(router.routes());
+```
+
+##### 设置路由前缀
+
+```js
+router.prefix('/api')
+// 或者
+const router = new Router({
+   prefix: '/api' 
+})
+```
+
+##### 路由嵌套
+
+```js
+var forums = new Router();
+var posts = new Router();
+
+posts.get('/', (ctx, next) => {...});
+posts.get('/:pid', (ctx, next) => {...});
+forums.use('/forums/:fid/posts', posts.routes(), posts.allowedMethods());
+
+// responds to "/forums/123/posts" and "/forums/123/posts/123"
+app.use(forums.routes());
+```
+
+##### 拆分路由
+
+```js
+//在app.js中只引入路由文件
+const Koa = require('koa'); // 引入koa
++ const router = require('./router');
+
+const app = new Koa(); // 创建koa应用
+
++ app.use(router.routes());
++ app.use(router.allowedMethods());
+
+// 启动服务监听本地3000端口
+app.listen(3000, () => {
+    console.log('应用已经启动，http://localhost:3000');
+})
+```
+
+```js
+// router/user.js设置了user模块的路由，并导出
+const Router = require('koa-router');
+
+const router = new Router();
+
+router.get("/", async (ctx) => {
+    console.log('查询参数', ctx.query);
+    ctx.body = '获取用户列表';
+})
+    .get("/:id", async (ctx) => {
+        const { id } = ctx.params
+        ctx.body = `获取id为${id}的用户`;
+    })
+    .post("/", async (ctx) => {
+        ctx.body = `创建用户`;
+    })
+    .put("/:id", async (ctx) => {
+        const { id } = ctx.params
+        ctx.body = `修改id为${id}的用户`;
+    })
+    .del("/:id", async (ctx) => {
+        const { id } = ctx.params
+        ctx.body = `删除id为${id}的用户`;
+    })
+    .all("/users/:id", async (ctx) => {
+        ctx.body = ctx.params;
+    });
+
+module.exports = router;
+```
+
+```js
+// router/index.js 导出整个路由模块
+const Router = require('koa-router');
+const user = require('./user');
+
+const router = new Router();
+
+// 指定一个url匹配
+router.get('/', async (ctx) => {
+    ctx.type = 'html';
+    ctx.body = '<h1>hello world!</h1>';
+})
+
+router.use('/user', user.routes(), user.allowedMethods());
+
+module.exports = router;
+```
+
+##### 路由重定向
+
+```js
+//router.redirect(source, destination, [code])
+router.redirect('/login', 'sign-in');
+
+//等价于
+router.all('/login', ctx => {
+  ctx.redirect('/sign-in');
+  ctx.status = 301;
+});
 ```
 
