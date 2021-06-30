@@ -1403,7 +1403,7 @@ module.exports = {
   entry: {
     //把文件放在js文件夹下
     'js/app': './src/app.js'
-  P，
+  }，
   //配置出口
   output:{
   	path: path.join(__dirname, './dist'),
@@ -1636,7 +1636,48 @@ run()
 
 <img src="README.assets/bV6DZG.png" alt="clipboard.png" style="zoom:67%;" />
 
+```js
+const middleware1 = (req, res, next) => {
+  console.log('m1')
+  return next().then(() => {
+    console.log('m1 end')
+  })
+}
+
+const middleware2 = async (req, res, next) => {
+  console.log('m2')
+  await new Promise(resolve => {
+    setTimeout(() => resolve(), 1000)
+  })
+  await next()
+  console.log('m2 end')
+}
+
+const middleware3 = async (req, res, next) => {
+  console.log('m3')
+  await next()
+  console.log('m3 end')
+}
+
+const middlewares = [middleware1, middleware2, middleware3]
+
+function run(req, res) {
+  const next = () => {
+    const middleware = middlewares.shift()
+    if(middleware) {
+      // 将middleware包装成Promise对象
+      return Promise.resolve(middleware(req, res, next))
+    }
+  }
+  next()
+}
+```
+
+
+
 ## Koa
+
+https://chenshenhai.github.io/koa2-note/
 
 ```js
 const Koa = require('koa')
@@ -1736,7 +1777,7 @@ yarn add @koa/router
 
 ```js
 const Koa = require('koa'); // 引入koa
-const Router = require('koa-router'); // 引入koa-router
+const Router = require('@koa/router'); // 引入koa-router
 
 const app = new Koa(); // 创建koa应用
 const router = new Router(); // 创建路由，支持传递参数
@@ -1785,6 +1826,49 @@ app.listen(3000, () => {
 ```
 
 ##### 请求参数获取值
+
+###### 原生方式
+
+```js
+//koa没有封装获取POST参数方法，需要通过获取context中的req对象
+// 解析上下文里node原生请求的POST参数
+function parsePostData( ctx ) {
+  return new Promise((resolve, reject) => {
+    try {
+      let postdata = "";
+      ctx.req.addListener('data', (data) => {
+        postdata += data
+      })
+      ctx.req.addListener("end",function(){
+        let parseData = parseQueryStr( postdata )
+        resolve( parseData )
+      })
+    } catch ( err ) {
+      reject(err)
+    }
+  })
+}
+
+// 将POST请求参数字符串解析成JSON
+function parseQueryStr( queryStr ) {
+  let queryData = {}
+  let queryStrList = queryStr.split('&')
+  console.log( queryStrList )
+  for (  let [ index, queryStr ] of queryStrList.entries()  ) {
+    let itemList = queryStr.split('=')
+    queryData[ itemList[0] ] = decodeURIComponent(itemList[1])
+  }
+  return queryData
+}
+
+if ( ctx.url === '/' && ctx.method === 'POST' ) {
+  // 当POST请求的时候，解析POST表单里的数据，并显示出来
+  let postData = await parsePostData( ctx )
+  ctx.body = postData
+}
+```
+
+###### 使用koa-router
 
 ```js
 // params参数
@@ -1858,7 +1942,7 @@ app.listen(3000, () => {
 
 ```js
 // router/user.js设置了user模块的路由，并导出
-const Router = require('koa-router');
+const Router = require('@koa/router');
 
 const router = new Router();
 
@@ -1890,7 +1974,7 @@ module.exports = router;
 
 ```js
 // router/index.js 导出整个路由模块
-const Router = require('koa-router');
+const Router = require('@koa/router');
 const user = require('./user');
 
 const router = new Router();
@@ -1917,5 +2001,201 @@ router.all('/login', ctx => {
   ctx.redirect('/sign-in');
   ctx.status = 301;
 });
+```
+
+#### Koa-bodyparser
+
+处理POST请求，koa上下文的formData数据解析到ctx.request.body中
+
+```js
+const bodyParser = require('koa-bodyparser')
+// 使用ctx.body解析中间件
+app.use(bodyParser())
+// ......
+let postData = ctx.request.body
+ctx.body = postData
+```
+
+#### Koa-static
+
+```js
+const Koa = require('koa')
+const path = require('path')
+const static = require('koa-static')
+
+const app = new Koa()
+
+// 静态资源目录对于相对入口文件index.js的路径
+const staticPath = './static'
+
+app.use(static(
+  path.join( __dirname,  staticPath)
+))
+
+
+app.use( async ( ctx ) => {
+  ctx.body = 'hello world'
+})
+
+app.listen(3000, () => {
+  console.log('[demo] static-use-middleware is starting at port 3000')
+})
+```
+
+#### cookie/session
+
+##### cookie
+
+koa提供了从上下文直接读取、写入cookie的方法
+
+- ctx.cookies.get(name, [options]) 读取上下文请求中的cookie
+- ctx.cookies.set(name, value, [options]) 在上下文中写入cookie
+
+```js
+const Koa = require('koa')
+const app = new Koa()
+
+app.use( async ( ctx ) => {
+
+  if ( ctx.url === '/index' ) {
+    ctx.cookies.set(
+      'cid', 
+      'hello world',
+      {
+        domain: 'localhost',  // 写cookie所在的域名
+        path: '/index',       // 写cookie所在的路径
+        maxAge: 10 * 60 * 1000, // cookie有效时长
+        expires: new Date('2017-02-15'),  // cookie失效时间
+        httpOnly: false,  // 是否只用于http请求中获取
+        overwrite: false  // 是否允许重写
+      }
+    )
+    ctx.body = 'cookie is ok'
+  } else {
+    ctx.body = 'hello world' 
+  }
+
+})
+
+app.listen(3000)
+```
+
+##### session
+
+数据库存储方案：
+
+- 将session存放在MySQL数据库中
+- 需要用到中间件
+  - koa-session-minimal 适用于koa2 的session中间件，提供存储介质的读写接口 。
+  - koa-mysql-session 为koa-session-minimal中间件提供MySQL数据库的session数据读写操作。
+  - 将sessionId和对于的数据存到数据库
+- 将数据库的存储的sessionId存到页面的cookie中
+- 根据cookie的sessionId去获取对于的session信息
+
+```js
+const Koa = require('koa')
+const session = require('koa-session-minimal')
+const MysqlSession = require('koa-mysql-session')
+
+const app = new Koa()
+
+// 配置存储session信息的mysql
+let store = new MysqlSession({
+  user: 'root',
+  password: 'abc123',
+  database: 'koa_demo',
+  host: '127.0.0.1',
+})
+
+// 存放sessionId的cookie配置
+let cookie = {
+  maxAge: '', // cookie有效时长
+  expires: '',  // cookie失效时间
+  path: '', // 写cookie所在的路径
+  domain: '', // 写cookie所在的域名
+  httpOnly: '', // 是否只用于http请求中获取
+  overwrite: '',  // 是否允许重写
+  secure: '',
+  sameSite: '',
+  signed: '',
+
+}
+
+// 使用session中间件
+app.use(session({
+  key: 'SESSION_ID',
+  store: store,
+  cookie: cookie
+}))
+
+app.use( async ( ctx ) => {
+
+  // 设置session
+  if ( ctx.url === '/set' ) {
+    ctx.session = {
+      user_id: Math.random().toString(36).substr(2),
+      count: 0
+    }
+    ctx.body = ctx.session
+  } else if ( ctx.url === '/' ) {
+
+    // 读取session信息
+    ctx.session.count = ctx.session.count + 1
+    ctx.body = ctx.session
+  } 
+
+})
+
+app.listen(3000)
+```
+
+#### mysql
+
+##### 创建数据库会话
+
+```js
+const mysql      = require('mysql')
+const connection = mysql.createConnection({
+  host     : '127.0.0.1',   // 数据库地址
+  user     : 'root',    // 数据库用户
+  password : '123456'   // 数据库密码
+  database : 'my_database'  // 选中数据库
+})
+
+// 执行sql脚本对数据库进行读写 
+connection.query('SELECT * FROM my_table',  (error, results, fields) => {
+  if (error) throw error
+  // connected! 
+
+  // 结束会话
+  connection.release() 
+});
+```
+
+##### 创建数据连接池
+
+```js
+const mysql = require('mysql')
+
+// 创建数据池
+const pool  = mysql.createPool({
+  host     : '127.0.0.1',   // 数据库地址
+  user     : 'root',    // 数据库用户
+  password : '123456'   // 数据库密码
+  database : 'my_database'  // 选中数据库
+})
+
+// 在数据池中进行会话操作
+pool.getConnection(function(err, connection) {
+
+  connection.query('SELECT * FROM my_table',  (error, results, fields) => {
+
+    // 结束会话
+    connection.release();
+
+    // 如果有错误就抛出
+    if (error) throw error;
+  })
+})
 ```
 
